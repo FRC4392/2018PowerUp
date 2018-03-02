@@ -1,8 +1,8 @@
 package org.usfirst.frc.team4392.robot.subsystems;
 
-import java.math.*;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
@@ -32,9 +32,11 @@ public class Lift {
 		lift1.config_kP(0, .8, 0);
 		lift1.configMotionCruiseVelocity(6387, 0);
 		lift1.configMotionAcceleration(((int)(6387*2)), 0);
+		lift1.setNeutralMode(NeutralMode.Brake);
 		
 		lift2.setInverted(true);
 		lift2.follow(lift1);
+		lift2.setNeutralMode(NeutralMode.Brake);
 	}
 	
 	public void setPosition(int position){
@@ -47,5 +49,12 @@ public class Lift {
 		setPosition((int)counts);
 	}
 	
+	public double getHeight() {
+		return lift1.getSelectedSensorPosition(0) * distancePerCount;
+	}
+	
+	public boolean getOnHeight(double target){
+		return (Math.abs(getHeight() - target) < 3);
+	}
 	
 }
