@@ -19,6 +19,8 @@ import org.usfirst.frc.team4392.robot.subsystems.Intake;
 import org.usfirst.frc.team4392.robot.subsystems.Lift;
 import org.usfirst.frc.team4392.util.CheesyDriveHelper;
 import org.usfirst.frc.team4392.util.DriveSignal;
+
+import edu.wpi.cscore.UsbCamera;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.DriverStation;
 
@@ -43,21 +45,25 @@ public class Robot extends IterativeRobot {
 		//5 = scale from right
 		//6 = switch from right
 	private Timer autoTimer = new Timer();
+	private UsbCamera cam;
 	
 	
 	int state = 0;
-	boolean pivotState = false;
+	boolean pivotState = true;
 	boolean lastPivotButtonState = false;
 	
 	@Override
 	public void robotInit() {
-		CameraServer.getInstance().startAutomaticCapture(); 
+		//cam = CameraServer.getInstance().startAutomaticCapture(); 
+		//cam.setFPS(15);
 		autoStartChooser = new SendableChooser();
 		autoStartChooser.addDefault("Left", 0);
 		autoStartChooser.addObject("Center", 1);
 		autoStartChooser.addObject("Right", 2);
 		autoStartChooser.addObject("Drive Straight", 3);
 		SmartDashboard.putData(autoStartChooser);
+		
+		//drive.resetSensors();
 		
 	}
 
@@ -103,10 +109,12 @@ public class Robot extends IterativeRobot {
 			break;
 		}
 		autoTimer.start();
+		selectedAuto = 0;
 	}
 	
 	@Override
 	public void autonomousPeriodic() {
+		drive.outputToSmartDashboard();
 		switch(selectedAuto){
 		case 0:
 			driveStraight();
@@ -153,28 +161,34 @@ public class Robot extends IterativeRobot {
 			right = right * right;
 		}
 		boolean quick = controller.getBumper(Hand.kRight);
+		if (quick) {
+			right = right * .5;
+		}
 		DriveSignal signal = cheesyhelper.cheesyDrive(left, right, quick);
 		drive.setLeftRight(signal.leftMotor, signal.rightMotor);
 		drive.setHighGear(controller.getBumper(Hand.kLeft));
 		
 		if (controller2.getXButton()){
-			lift.setPosition(17*2);
+			lift.setHeight(17*2);
 		} else if (controller2.getYButton()){
-			lift.setPosition(55);
+			lift.setHeight(55);
 		} else if (controller2.getBButton()){
-			lift.setPosition(70);
+			lift.setHeight(69);
 		} else if (controller2.getAButton()){
-			lift.setPosition(1);
+			lift.setHeight(0);
 		} else if (controller2.getBumper(Hand.kRight)){
-			lift.setPosition(0);
+			//lift.setHeight(0);
+		} else if (controller2.getPOV() == 1) {
+			lift.setPower(.5);
 		}
 		
+		boolean shouldBeDown = lift.getHeight() > 36 && lift.getHeight() < 62;
 		//Intake Controls
 		if ((controller2.getTriggerAxis(Hand.kLeft) > .5) && !lastPivotButtonState){
 			pivotState = !pivotState;
 		}
 		lastPivotButtonState = controller2.getTriggerAxis(Hand.kLeft) > .5;
-		intake.setPivot(pivotState);
+		intake.setPivot(pivotState || shouldBeDown);
 		
 		if (controller2.getTriggerAxis(Hand.kRight) > .5){
 			intake.setOpen();
@@ -322,7 +336,7 @@ public class Robot extends IterativeRobot {
 		switch(state){
 		case 0:
 			drive.driveTargert(36);
-			if(drive.getOnPosition(10)){
+			if(drive.getOnPosition(36)){
 				state++;
 			}
 			break;
@@ -337,8 +351,8 @@ public class Robot extends IterativeRobot {
 			state++;
 			break;
 		case 3:
-			drive.driveTargert(127.75);
-			if(drive.getOnPosition(127.75)){
+			drive.driveTargert(77.75-4-16);
+			if(drive.getOnPosition(77.75-4-16)){
 				state++;
 			}
 			break;
@@ -393,13 +407,13 @@ public class Robot extends IterativeRobot {
 		switch(state){
 		case 0:
 			drive.driveTargert(36);
-			if(drive.getOnPosition(10)){
+			if(drive.getOnPosition(36)){
 				state++;
 			}
 			break;
 		case 1:
-			drive.turnAngle(90, .5);
-			if(drive.getOnAngle(90)){
+			drive.turnAngle(-90, .5);
+			if(drive.getOnAngle(-90)){
 				state++;
 			}
 			break;
@@ -408,8 +422,8 @@ public class Robot extends IterativeRobot {
 			state++;
 			break;
 		case 3:
-			drive.driveTargert(125.75);
-			if(drive.getOnPosition(125.75)){
+			drive.driveTargert(72);
+			if(drive.getOnPosition(72)){
 				state++;
 			}
 			break;
@@ -532,8 +546,8 @@ public class Robot extends IterativeRobot {
 			}
 			break;
 		case 2:
-			drive.turnAngle(90, .5);
-			if(drive.getOnAngle(90)){
+			drive.turnAngle(-90, .5);
+			if(drive.getOnAngle(-90)){
 				state++;
 			}
 			break;

@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.Solenoid;
 public class Intake {
 	
 	double intakeSpeed = -1;
-	double outtakeSpeed = 1;
+	double outtakeSpeed = .5;
 
 	//Talon 1 declaration
 	//Talon 2 declaration

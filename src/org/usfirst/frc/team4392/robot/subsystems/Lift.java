@@ -10,12 +10,14 @@ public class Lift {
 	private TalonSRX lift1 = new TalonSRX(4);
 	private TalonSRX lift2 = new TalonSRX(7);
 	
-	private static double offset = -600;
+	private static double offset = -400;
 	private static double diameter = 1.273;
 	private static double circumference = Math.PI * diameter;
 	private static double countsPerRot = 4096;
 	private static double distancePerCount = circumference/countsPerRot;
 	private static double countsPerDistance = countsPerRot/circumference;
+	
+	private static double setPosition = 0;
 	
 	public Lift(){
 		lift1.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, 0, 0);
@@ -41,6 +43,11 @@ public class Lift {
 	
 	public void setPosition(int position){
 		lift1.set(ControlMode.MotionMagic, position);
+		lift2.follow(lift1);
+	}
+	
+	public void setPower(double Power) {
+		lift1.set(ControlMode.PercentOutput, Power);
 		lift2.follow(lift1);
 	}
 	

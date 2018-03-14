@@ -16,11 +16,12 @@ public class Drivetrain {
 	private PigeonIMU pidgey;
 	private Solenoid shifter = new Solenoid(0);
 	
-	private double kpAngle = 0.04;
+	private double kpAngle = 0.03;
 	private double kdAngle = 0.004;
 	
 	private static int encoderOffsetRight = 0;
 	private static int encoderOffsetLeft = 0;
+	private static double angleOffset = 0;
 	
 	private static double diameter = 6;
 	private static double circumference = Math.PI * diameter;
@@ -112,8 +113,16 @@ public class Drivetrain {
 	}
 	
 	public void outputToSmartDashboard(){
-		SmartDashboard.putNumber("leftSpeed", left1.getSelectedSensorVelocity(0));
-		SmartDashboard.putNumber("rightSpeed", right1.getSelectedSensorPosition(0));
+		PigeonIMU.GeneralStatus genStatus = new PigeonIMU.GeneralStatus();
+		PigeonIMU.FusionStatus fusionStatus = new PigeonIMU.FusionStatus();
+		
+		pidgey.getGeneralStatus(genStatus);
+		pidgey.getFusedHeading(fusionStatus);
+		
+		double currentAngle = fusionStatus.heading;
+		SmartDashboard.putNumber("leftPos", left1.getSelectedSensorPosition(0));
+		SmartDashboard.putNumber("rightPos", right1.getSelectedSensorPosition(0));
+		SmartDashboard.putNumber("angle", currentAngle);
 	}
 	
 	public void turnAngle(double angle, double speed){
@@ -128,10 +137,10 @@ public class Drivetrain {
 		double currentAngle = fusionStatus.heading;
 		double currentAngularRate = xyz_dps[2];
 		
-		double turnThrottle = (angle - currentAngle) * kpAngle - (currentAngularRate) * kdAngle;
+		double turnThrottle = (angle - currentAngle) * kpAngle;
 		
 		if (Math.abs(turnThrottle) > speed){
-			turnThrottle = speed * Math.signum(speed);
+			turnThrottle = speed * Math.signum(turnThrottle);
 		}
 		
 		setLeftRight(-turnThrottle, turnThrottle);
@@ -155,11 +164,28 @@ public class Drivetrain {
 		pidgey.getFusedHeading(fusionStatus);
 		
 		double currentAngle = fusionStatus.heading;
-		return (Math.abs(currentAngle - target) < 3);
+		return (Math.abs(currentAngle - angleOffset - target) < 3) && (left1.getMotorOutputPercent() < .2);
 	}
 	
 	public void resetEncoders(){
 		encoderOffsetRight = right1.getSelectedSensorPosition(0);
 		encoderOffsetLeft = left1.getSelectedSensorPosition(0);
+	}
+	
+	public void resetGyro() {
+		PigeonIMU.GeneralStatus genStatus = new PigeonIMU.GeneralStatus();
+		PigeonIMU.FusionStatus fusionStatus = new PigeonIMU.FusionStatus();
+		
+		double [] xyz_dps = new double [3];
+		pidgey.getGeneralStatus(genStatus);
+		pidgey.getRawGyro(xyz_dps);
+		pidgey.getFusedHeading(fusionStatus);
+		
+		angleOffset = fusionStatus.heading;
+	}
+	
+	public void resetSensors() {
+		resetGyro();
+		resetEncoders();
 	}
 }
